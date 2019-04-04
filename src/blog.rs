@@ -4,7 +4,7 @@ use handlebars::Handlebars;
 use pulldown_cmark::{html, Parser};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::fs::{create_dir, read_dir, read_to_string, write, File, ReadDir};
+use std::fs::{create_dir, metadata, read_dir, read_to_string, write, File, ReadDir};
 use std::io;
 use std::io::prelude::*;
 use std::io::Result;
@@ -60,7 +60,21 @@ pub fn new(filename: String) {
     new_file_header.push_str("---");
     write(new_file_path, new_file_header).expect("写入html文件失败😵");
 }
-
+// 移动文件
+fn move_static_file() {
+    let paths = read_dir("./src/template").unwrap();
+    for path in paths {
+        let path_origin = path.unwrap().path();
+        // 获取路径信息
+        let pathInfo = metadata(&path_origin).unwrap();
+        // 判定是否是目录
+        let isDir = pathInfo.is_dir();
+        if (isDir) {
+            let move_paths = read_dir(&path_origin);
+            println!("{:?}", move_paths);
+        }
+    }
+}
 // 编译md文件到html
 fn md_to_html(path: String) {
     let file_string = read_to_string(path).unwrap();
@@ -84,7 +98,7 @@ fn md_to_html(path: String) {
     html_string.push_str(&html_content);
     html_string.push_str(&html_footer_template);
     // render without register
-    println!("{:?}", html_string);
+    // println!("{:?}", html_string);
     // 输出
     let mut file_name = String::from(file_head.title);
     file_name.insert_str(0, "./build/");
@@ -108,6 +122,7 @@ pub fn build() {
             None => println!("不是路径哦😵"),
         }
     }
+    move_static_file();
 }
 
 // 创建服务器
