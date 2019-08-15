@@ -66,10 +66,10 @@ fn move_static_file() {
     for path in paths {
         let path_origin = path.unwrap().path();
         // 获取路径信息
-        let pathInfo = metadata(&path_origin).unwrap();
+        let path_info = metadata(&path_origin).unwrap();
         // 判定是否是目录
-        let isDir = pathInfo.is_dir();
-        if (isDir) {
+        let is_dir = path_info.is_dir();
+        if (is_dir) {
             let move_paths = read_dir(&path_origin);
             println!("{:?}", move_paths);
         }
