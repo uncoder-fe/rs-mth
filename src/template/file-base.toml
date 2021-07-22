@@ -1,6 +1,6 @@
-title = "toml example"
-author = "uncoder"
+title = "document title"
+author = "author"
 date = ""
-tags= ["其他"]
-categories= ["javascript"]
-slug= "我是slug"
+tags= [""]
+categories= [""]
+slug= ""
