@@ -24,16 +24,18 @@ struct ArticleMeta {
     slug: String,
 }
 // 静态文件目录
-static STATIC_FOLDER: &str = "./src/static";
+static STATIC_FOLDER: &str = "src/static";
+// 模版目录
+static TEMPLATE_FOLDER: &str = "src/template";
 // markdown目录
-static MARKDOWN_FOLDER: &str = "./markdown";
+static MARKDOWN_FOLDER: &str = "markdown";
 // 构建html目录
-static BUILD_FOLDER: &str = "./build";
+static BUILD_FOLDER: &str = "build";
 
 // 获取文档头部的meta信息
 fn get_file_meta() -> String {
-    let mut file_base_config =
-        fs::File::open("./src/template/file-base.toml").expect("没找到配置文件");
+    let mut file_base_dir = PathBuf::from(TEMPLATE_FOLDER).join("file-base.toml");
+    let mut file_base_config = fs::File::open(file_base_dir).expect("没找到配置文件");
     let mut content = String::new();
     // 读取配置内容
     file_base_config
@@ -59,12 +61,10 @@ pub fn init(project_name: String) {
 }
 // 创建md文件
 pub fn new(filename: String) {
-    // markdown路径
-    let markdown_folder = MARKDOWN_FOLDER.clone();
     // markdown路径存在判定
-    if (Path::new(markdown_folder).exists() == false) {
-        print!("没有发现目标目录，创建新目录");
-        create_dir(markdown_folder);
+    if (!Path::new(MARKDOWN_FOLDER).exists()) {
+        print!("没有目标目录，创建新目录");
+        create_dir(MARKDOWN_FOLDER);
     }
     // 新文件的meta
     let mut new_file_meta = String::from("---\n");
@@ -73,11 +73,11 @@ pub fn new(filename: String) {
     new_file_meta.push_str(&file_meta);
     new_file_meta.push_str("---");
     // 新文件路径（拼接路径和文件名）
-    let new_file_path = markdown_folder.to_string() + "/" + &filename;
+    let mut new_file_path = PathBuf::from(MARKDOWN_FOLDER).join(filename);
     fs::write(new_file_path, new_file_meta).expect("创建文件失败😵");
 }
 // 移动文件
-fn move_static_file() {
+fn copy_static_file() {
     let paths = fs::read_dir(STATIC_FOLDER).unwrap();
     for path in paths {
         let path_origin = path.unwrap().path();
@@ -91,21 +91,23 @@ fn move_static_file() {
         } else {
             println!("文件{:?}", path_origin);
             let file_name = path_origin.file_name().unwrap();
-            let mut build_folder = PathBuf::from(BUILD_FOLDER);
-            build_folder.push(file_name);
+            let build_folder = PathBuf::from(BUILD_FOLDER).join(file_name);
             // 复制
             fs::copy(path_origin, build_folder);
         }
     }
 }
 // 编译md文件到html
-fn md_to_html(path: String) {
+fn md_to_html(path: PathBuf) {
     // 读取路径下的文件内容
     let file_string = fs::read_to_string(path).unwrap();
-    // 拆分头部/markdown
+    // 拆分头部/内容
     let file_part: Vec<&str> = file_string.split("\n---\n").collect();
     let file_head_string = file_part[0].replace("---", "");
-    let file_content_str = file_part[1];
+    let mut file_content_str = ""; // 内容
+    if (file_part.len() > 1) {
+        file_content_str = file_part[1];
+    }
     // 解析头部toml信息
     let file_head: ArticleMeta = toml::from_str(file_head_string.trim()).unwrap();
     // 解析内容
@@ -114,8 +116,10 @@ fn md_to_html(path: String) {
     html::push_html(&mut html_content, file_content);
     // 拼接html
     let temple = Handlebars::new();
-    let html_header_template = fs::read_to_string("./src/template/layout/header.html").unwrap();
-    let html_footer_template = fs::read_to_string("./src/template/layout/footer.html").unwrap();
+    let html_header_template =
+        fs::read_to_string(PathBuf::from(TEMPLATE_FOLDER).join("layout/header.html")).unwrap();
+    let html_footer_template =
+        fs::read_to_string(PathBuf::from(TEMPLATE_FOLDER).join("layout/footer.html")).unwrap();
     let mut html_string = temple
         .render_template(&html_header_template, &file_head)
         .unwrap();
@@ -124,17 +128,19 @@ fn md_to_html(path: String) {
     // render without register
     // println!("{:?}", html_string);
     // 输出
-    let mut new_file_path = BUILD_FOLDER.clone().to_string();
-    new_file_path.push_str("/");
-    new_file_path.push_str(file_head.title.as_str());
-    new_file_path.push_str(".html");
+    let new_file_path = PathBuf::from(BUILD_FOLDER).join(file_head.title + ".html");
     fs::write(new_file_path, html_string).expect("构建html失败😵");
     // println!("{:?},{}", file_head, html_buf);
 }
 pub fn build() {
-    // markdown路径
-    let markdown_folder = MARKDOWN_FOLDER.clone();
-    let paths = read_dir(markdown_folder).unwrap();
+    // 创建build目录
+    if (Path::new(BUILD_FOLDER).exists()) {
+        // 存在，则删除
+        fs::remove_dir_all(BUILD_FOLDER);
+    }
+    fs::create_dir(BUILD_FOLDER);
+    // 编译markdown
+    let paths = read_dir(MARKDOWN_FOLDER).unwrap();
     // read_dir(MARKDOWN_FOLDER) 返回一个Result<ReadDir>
     // read_dir(MARKDOWN_FOLDER).unwrap() 使用Result的unwrap方法返回ReadDir(迭代目录中的条目)
     // println!("paths:{:?}", paths);
@@ -145,11 +151,12 @@ pub fn build() {
         // println!("{:?}", file.unwrap().path());
         let file_path = file.unwrap().path(); // 链式，又不是真正的链式，如果返回一个新的类型，那就不能继续链式了
         match file_path.to_str() {
-            Some(f) => md_to_html(String::from(f)),
+            Some(f) => md_to_html(file_path),
             None => println!("不是路径哦😵"),
         }
     }
-    move_static_file();
+    // 拷贝静态文件
+    copy_static_file();
 }
 
 // 创建服务器
