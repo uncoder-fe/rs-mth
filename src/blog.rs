@@ -170,8 +170,8 @@ async fn hello_world(_req: Request<Body>) -> Result<Response<Body>, hyper::Error
             *response.body_mut() = Body::from("Try POSTing data to /echo");
         }
         (&Method::POST, "/echo") => {
-            // we'll be back
-            return Ok(Response::new("Hello, echo".into()));
+            let full_body = hyper::body::to_bytes(_req.into_body()).await?;
+            *response.body_mut() = Body::from(full_body);
         }
         _ => {
             println!("404!");
