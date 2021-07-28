@@ -3,18 +3,14 @@ use chrono::{DateTime, Local};
 use handlebars::Handlebars;
 use pulldown_cmark::{html, Parser};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::ffi::{OsStr, OsString};
 use std::fs::{self, create_dir, read_dir};
-use std::io;
 use std::io::prelude::*;
-use std::io::Result;
-use std::path::Path;
-use std::path::PathBuf;
+use std::io::{self, Result};
+use std::path::{Path, PathBuf};
 use toml;
 
-// meta结构体
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct ArticleMeta {
     title: String,
     author: String,
@@ -50,31 +46,6 @@ fn get_file_meta() -> String {
     // println!("{:?}", article_meta);
     // 重新吐出toml转成的字符串
     toml::to_string(&article_meta).unwrap()
-}
-
-// 初始化项目
-pub fn init(project_name: String) {
-    // 读取md配置文件
-    println!("创建项目");
-    // 创建一个目录
-    fs::create_dir(project_name).expect("创建目录失败😵");
-}
-// 创建md文件
-pub fn new(filename: String) {
-    // markdown路径存在判定
-    if (!Path::new(MARKDOWN_FOLDER).exists()) {
-        print!("没有目标目录，创建新目录");
-        create_dir(MARKDOWN_FOLDER);
-    }
-    // 新文件的meta
-    let mut new_file_meta = String::from("---\n");
-    // 读取md配置文件
-    let file_meta = get_file_meta();
-    new_file_meta.push_str(&file_meta);
-    new_file_meta.push_str("---");
-    // 新文件路径（拼接路径和文件名）
-    let mut new_file_path = PathBuf::from(MARKDOWN_FOLDER).join(filename);
-    fs::write(new_file_path, new_file_meta).expect("创建文件失败😵");
 }
 // 移动文件
 fn copy_static_file() {
@@ -132,6 +103,15 @@ fn md_to_html(path: PathBuf) {
     fs::write(new_file_path, html_string).expect("构建html失败😵");
     // println!("{:?},{}", file_head, html_buf);
 }
+
+// 初始化命令
+pub fn init(project_name: String) {
+    // 读取md配置文件
+    println!("创建项目");
+    // 创建一个目录
+    fs::create_dir(project_name).expect("创建目录失败😵");
+}
+// 构建命令
 pub fn build() {
     // 创建build目录
     if (Path::new(BUILD_FOLDER).exists()) {
@@ -158,6 +138,22 @@ pub fn build() {
     // 拷贝静态文件
     copy_static_file();
 }
-
-// 创建服务器
+// 创建命令
+pub fn new(filename: String) {
+    // markdown路径存在判定
+    if (!Path::new(MARKDOWN_FOLDER).exists()) {
+        print!("没有目标目录，创建新目录");
+        create_dir(MARKDOWN_FOLDER);
+    }
+    // 新文件的meta
+    let mut new_file_meta = String::from("---\n");
+    // 读取md配置文件
+    let file_meta = get_file_meta();
+    new_file_meta.push_str(&file_meta);
+    new_file_meta.push_str("---");
+    // 新文件路径（拼接路径和文件名）
+    let mut new_file_path = PathBuf::from(MARKDOWN_FOLDER).join(filename);
+    fs::write(new_file_path, new_file_meta).expect("创建文件失败😵");
+}
+// 启动服务器命令
 pub fn server() {}
