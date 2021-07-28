@@ -15,7 +15,10 @@ fn main() {
     let test1 = test.to_string(); // &str -> String
     let test2 = &test1; // String -> &String
     let test3 = test2.as_str(); // &String -> &str
-    println!("test{}, test1{}, test2{}, test3{}", test, test1, test2, test3);
+    println!(
+        "test{}, test1{}, test2{}, test3{}",
+        test, test1, test2, test3
+    );
     // 正式编码
 
     // 获取整条运行命令内容
@@ -32,8 +35,10 @@ fn main() {
             let file_name = &argument[3];
             blog::new(file_name.to_string());
         }
-        "build" => blog::build(),
-        "server" => blog::server(),
+        "build" => {
+            blog::build();
+        }
+        "serve" => blog::serve(),
         _ => println!("something else!"),
     }
 }
