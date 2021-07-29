@@ -30,25 +30,6 @@ static MARKDOWN_FOLDER: &str = "markdown";
 // 构建目录
 static BUILD_FOLDER: &str = "build";
 
-// 获取文档meta信息
-fn get_file_meta() -> String {
-    let file_base_dir = PathBuf::from(TEMPLATE_FOLDER).join("file-base.toml");
-    let mut file_base_config = fs::File::open(file_base_dir).expect("没找到配置文件");
-    let mut content = String::new();
-    // 读取配置内容
-    file_base_config
-        .read_to_string(&mut content)
-        .expect("读取配置文件内容失败😵");
-    // 解析配置
-    let mut article_meta: ArticleMeta = toml::from_str(&content).unwrap();
-    // 设置文档创建时间
-    let date_now: DateTime<Local> = Local::now();
-    let date: String = date_now.to_rfc3339();
-    article_meta.date = date;
-    // println!("{:?}", article_meta);
-    // 重新吐出toml转成的字符串
-    toml::to_string(&article_meta).unwrap()
-}
 // 复制静态文件到构建目录
 fn copy_static_file() -> Result<(), io::Error> {
     let paths = fs::read_dir(STATIC_FOLDER).unwrap();
@@ -152,7 +133,23 @@ pub fn new(filename: String) -> Result<(), io::Error> {
     // 新文件的meta
     let mut new_file_meta = String::from("---\n");
     // 读取md配置文件
-    let file_meta = get_file_meta();
+    let file_base_dir = PathBuf::from(TEMPLATE_FOLDER).join("file-base.toml");
+    let mut file_base_config = fs::File::open(file_base_dir).expect("没找到配置文件");
+    let mut content = String::new();
+    // 读取配置内容
+    file_base_config
+        .read_to_string(&mut content)
+        .expect("读取配置文件内容失败😵");
+    // 解析配置
+    let mut article_meta: ArticleMeta = toml::from_str(&content).unwrap();
+    // 设置文档创建时间
+    let date_now: DateTime<Local> = Local::now();
+    let date: String = date_now.to_rfc3339();
+    article_meta.date = date; // 日期
+    article_meta.title = filename.clone(); // 标题
+    // println!("{:?}", article_meta);
+    // 重新吐出toml转成的字符串
+    let file_meta = toml::to_string(&article_meta).unwrap();
     new_file_meta.push_str(&file_meta);
     new_file_meta.push_str("---");
     // 新文件路径（拼接路径和文件名）
