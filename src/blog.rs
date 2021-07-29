@@ -130,8 +130,6 @@ pub fn new(filename: String) -> Result<(), io::Error> {
         print!("没有目标目录，创建新目录");
         create_dir(MARKDOWN_FOLDER)?;
     }
-    // 新文件的meta
-    let mut new_file_meta = String::from("---\n");
     // 读取md配置文件
     let file_base_dir = PathBuf::from(TEMPLATE_FOLDER).join("file-base.toml");
     let mut file_base_config = fs::File::open(file_base_dir).expect("没找到配置文件");
@@ -146,12 +144,10 @@ pub fn new(filename: String) -> Result<(), io::Error> {
     let date_now: DateTime<Local> = Local::now();
     let date: String = date_now.to_rfc3339();
     article_meta.date = date; // 日期
-    article_meta.title = filename.clone(); // 标题
-    // println!("{:?}", article_meta);
-    // 重新吐出toml转成的字符串
+    article_meta.title = filename.clone().replace(".md", ""); // 标题
     let file_meta = toml::to_string(&article_meta).unwrap();
-    new_file_meta.push_str(&file_meta);
-    new_file_meta.push_str("---");
+    // 新文件的meta
+    let new_file_meta = ["---\n", &file_meta, "---\n"].join("");
     // 新文件路径（拼接路径和文件名）
     let new_file_path = PathBuf::from(MARKDOWN_FOLDER).join(filename);
     fs::write(new_file_path, new_file_meta).expect("创建文件失败😵");
