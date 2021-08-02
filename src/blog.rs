@@ -3,6 +3,7 @@ use chrono::{DateTime, Local};
 use handlebars::Handlebars;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use hyper_staticfile::Static;
 use pulldown_cmark::{html, Parser};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, create_dir, read_dir};
@@ -11,6 +12,11 @@ use std::io::prelude::*;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use toml;
+
+enum MyError {
+    Hyper(hyper::Error),
+    IoError(std::io::Error),
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ArticleMeta {
@@ -153,25 +159,42 @@ pub fn new(filename: String) -> Result<(), io::Error> {
     fs::write(new_file_path, new_file_meta).expect("创建文件失败😵");
     Ok(())
 }
+// 包含后缀有这些的文件
+fn has_static(p: String) -> bool {
+    println!("p:{}", p);
+    let matches = [".js", ".css", ".html"];
+    let mut b = false;
+    for elem in matches {
+        if p.contains(elem) {
+            b = true;
+        }
+    }
+    b
+}
 
-async fn hello_world(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+async fn hello_world(_req: Request<Body>) -> Result<Response<Body>, std::io::Error> {
     let mut response = Response::new(Body::empty());
     let method = _req.method();
     let uri_path = _req.uri().path();
-    match (method, uri_path) {
-        (&Method::GET, "/") => {
-            *response.body_mut() = Body::from("Try POSTing data to /echo");
-        }
-        (&Method::POST, "/echo") => {
-            let full_body = hyper::body::to_bytes(_req.into_body()).await?;
-            *response.body_mut() = Body::from(full_body);
-        }
-        _ => {
-            println!("404!");
-            *response.status_mut() = StatusCode::NOT_FOUND;
-        }
-    };
-    Ok(response)
+
+    if uri_path == "/" {
+        // 首页
+        *response.body_mut() = Body::from("Try POSTing data to /echo");
+        Ok(response)
+    } else if method == &Method::POST {
+        // post请求
+        let full_body = hyper::body::to_bytes(_req.into_body()).await.unwrap();
+        *response.body_mut() = Body::from(full_body);
+        Ok(response)
+    } else if has_static(uri_path.to_string()) {
+        // 静态文件
+        let static_ = Static::new(Path::new(BUILD_FOLDER));
+        static_.serve(_req).await
+    } else {
+        // 404
+        *response.status_mut() = StatusCode::NOT_FOUND;
+        Ok(response)
+    }
 }
 async fn shutdown_signal() {
     // Wait for the CTRL+C signal
@@ -189,7 +212,7 @@ pub async fn serve() {
     // creates one from our `hello_world` function.
     let make_svc = make_service_fn(|_conn| async {
         // service_fn converts our function into a `Service`
-        Ok::<_, hyper::Error>(service_fn(hello_world))
+        Ok::<_, std::io::Error>(service_fn(hello_world))
     });
 
     let server = Server::bind(&addr).serve(make_svc);
