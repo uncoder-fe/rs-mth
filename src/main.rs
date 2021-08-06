@@ -1,22 +1,26 @@
 // #[derive(Debug)]
+#![allow(unused)]
 use std::env;
 mod blog;
 
-fn getOwn(s: String) {
+fn get_own(s: String) {
+    println!("s:{}", s);
+}
+fn get_own2(s: &str) {
     println!("s:{}", s);
 }
 
 fn main() {
     // 正式编码之前
-    let test = "字符串";
-    // let test = "字符串".to_string();
-    // getOwn(test);
+    let test: &str = "字符串";
+    // let test: String = "字符串".to_string();
+    // get_own(test);
     // println!("test{}", test);
-    let test1 = test.to_string(); // &str -> String
-    let test2 = &test1; // String -> &String
-    let test3 = test2.as_str(); // &String -> &str
+    let test1: String = test.to_string(); // &str -> String
+    let test2: &String = &test1; // String -> &String
+    let test3: &str = test2.as_str(); // &String -> &str
     println!(
-        "test{}, test1{}, test2{}, test3{}",
+        "test{}, test1{:}, test2{:?}, test3{}",
         test, test1, test2, test3
     );
     // 正式编码
@@ -27,18 +31,14 @@ fn main() {
     // 获取命令名称
     let command_name = &argument[2];
     match command_name as &str {
-        "init" => {
-            let project_name = &argument[3];
-            blog::init(project_name.to_string());
-        }
         "new" => {
             let file_name = &argument[3];
-            blog::new(file_name.to_string());
+            blog::new(file_name.to_string()).unwrap();
         }
         "build" => {
-            blog::build();
+            blog::build().unwrap();
         }
         "serve" => blog::serve(),
-        _ => println!("something else!"),
+        _ => println!("啊，不存在的指令!"),
     }
 }
