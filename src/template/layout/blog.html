@@ -9,11 +9,13 @@
   </head>
 
   <body>
-    <div class="my-content">
-      <h1>{{file_head.title}}</h1>
-      <h2>时间{{file_head.date}}</h2>
-      <h3>作者:{{file_head.author}}</h3>
-      {{file_content}}
+    <div class="article">
+      <h2 class="article-title">{{file_head.title}}</h2>
+      <div class="article-info">
+        <div class="article-date">时间:{{file_head.date}}</div>
+        <div class="article-author">作者:{{file_head.author}}</div>
+      </div>
+      <section class="article-content">{{file_content}}</section>
     </div>
     <script src="./index.js"></script>
   </body>

@@ -101,7 +101,7 @@ fn copy_static_file() -> Result<(), io::Error> {
         }
         println!("拷贝文件{:?}", _path);
         let build_folder = PathBuf::from(BUILD_FOLDER).join(file_name); // 思考题：为啥PathBuf可以join另一种类型OsStr？https://doc.rust-lang.org/stable/std/ffi/struct.OsStr.html, https://kaisery.github.io/trpl-zh-cn/ch10-00-generics.html
-        // 复制
+                                                                        // 复制
         fs::copy(_path, build_folder)?;
     }
     Ok(())
@@ -121,6 +121,7 @@ fn md_to_html(_path: PathBuf) {
     // println!("file_head_string:{:?}", file_head_string);
     // 解析头部toml信息
     let file_head: ArticleMeta = toml::from_str(file_head_string.trim()).unwrap();
+    println!("file_head:{:?}", file_head);
     // 解析markdown内容
     let file_content: Parser = Parser::new(file_content_str);
     let mut html_content: String = String::new();
@@ -156,7 +157,7 @@ pub fn new(filename: String) -> Result<(), io::Error> {
     let mut article_meta: ArticleMeta = toml::from_str(&file_base_string).unwrap();
     // 设置文档创建时间
     let date_now: DateTime<Local> = Local::now();
-    article_meta.date = date_now.to_rfc3339(); // 日期
+    article_meta.date = date_now.format("%Y-%m-%d %H:%M:%S").to_string(); // 日期
     article_meta.title = filename.clone().replace(".md", ""); // 标题
     let file_meta_toml: String = toml::to_string(&article_meta).unwrap(); // 重新反转为字符串
     let new_file_content: String = ["---\n", &file_meta_toml, "---\n"].join(""); // 新文件的meta

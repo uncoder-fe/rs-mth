@@ -3,7 +3,6 @@ title = "My Blog Site"
 
 [params]
   AuthorName = "师小强"
-  GitHubUser = "uncoder-fe"
   SidebarRecentLimit = 5
   Subtitle = "Blog is Hot!"
 

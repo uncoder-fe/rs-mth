@@ -4,3 +4,26 @@ body{
 ul{
     list-style: none;
 }
+.article{
+    padding: 100px 20vw;
+}
+.article-title{
+    font-size: 48px;
+    text-align: center;
+}
+.article-info{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+.article-date{
+    margin-right: 18px;
+    font-size: 12px;
+}
+.article-author{
+    font-size: 13px;
+}
+.article-content{
+    font-size: 14px;
+}
