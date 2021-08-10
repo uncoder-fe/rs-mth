@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{file_head.title}}</title>
     <link rel="stylesheet" href="./index.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/default.min.css" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
   </head>
 
   <body>
@@ -18,5 +20,6 @@
       <section class="article-content">{{file_content}}</section>
     </div>
     <script src="./index.js"></script>
+    <script>hljs.highlightAll();</script>
   </body>
 </html>
