@@ -80,10 +80,11 @@ fn get_type(p: PathBuf) -> PathType {
 }
 // 复制静态文件到构建目录
 fn copy_static_file() -> Result<(), io::Error> {
-    let paths = fs::read_dir(STATIC_FOLDER).unwrap();
+    let paths: fs::ReadDir = fs::read_dir(STATIC_FOLDER).unwrap();
     for p in paths {
-        let _path: DirEntry = p.unwrap();
-        let _path: PathBuf = _path.path();
+        let p_result: Result<DirEntry, io::Error> = p;
+        let p_dir_entry: DirEntry = p_result.unwrap(); // 使用unwrap隐式脱壳，不推荐写法不安全
+        let _path: PathBuf = p_dir_entry.path();
         // 获取路径信息
         let path_attr: fs::Metadata = fs::metadata(&_path).unwrap();
         // 判定是否是目录
@@ -94,15 +95,15 @@ fn copy_static_file() -> Result<(), io::Error> {
             continue;
         }
         // Option 是一个枚举类型，用于有 “不存在” 的可能性的情况
-        let file_name: Option<&OsStr> = _path.file_name();
-        // 使用match显式脱衣, 解包 `Some` 将取出被包装的值
-        let file_name_os_str: &OsStr = match file_name {
+        let file_name_option: Option<&OsStr> = _path.file_name();
+        // 使用match显式脱壳, 解包 `Some` 将取出被包装的值
+        let file_name_os_str: &OsStr = match file_name_option {
             // Some找到一个属于 T 类型的元素
             Some(t) => t,
             None => OsStr::new(""), // None 找不到相应元素
         };
         let file_name_op_str: Option<&str> = file_name_os_str.to_str();
-        let file_name_str: &str = file_name_op_str.unwrap(); // 使用unwrap隐式脱衣，不推荐写法不安全
+        let file_name_str: &str = file_name_op_str.unwrap();
         let ext: Option<&str> = get_extension_from_filename(file_name_str);
         if ext == None {
             // 跳过没有文件后缀的，比如.DS_Store
@@ -110,8 +111,7 @@ fn copy_static_file() -> Result<(), io::Error> {
         }
         println!("拷贝文件{:?}", _path);
         let build_folder = PathBuf::from(BUILD_FOLDER).join(file_name_str); // 思考题：为啥PathBuf可以join另一种类型OsStr？https://doc.rust-lang.org/stable/std/ffi/struct.OsStr.html, https://kaisery.github.io/trpl-zh-cn/ch10-00-generics.html
-                                                                            // 复制
-        fs::copy(_path, build_folder)?;
+        fs::copy(_path, build_folder)?; // 复制
     }
     Ok(())
 }
@@ -130,7 +130,7 @@ fn md_to_html(_path: PathBuf) {
     // println!("file_head_string:{:?}", file_head_string);
     // 解析头部toml信息
     let file_head: ArticleMeta = toml::from_str(file_head_string.trim()).unwrap();
-    println!("file_head:{:?}", file_head);
+    // println!("file_head:{:?}", file_head);
     // 解析markdown内容
     let file_content: Parser = Parser::new(file_content_str);
     let mut html_content: String = String::new();
@@ -142,7 +142,7 @@ fn md_to_html(_path: PathBuf) {
     page_data.insert("file_head", &file_head);
     page_data.insert("file_content", &html_content);
     let html_string = Tera::one_off(&html_template, &page_data, false).unwrap();
-    println!("{:?}", html_content);
+    // println!("{:?}", html_content);
     // 输出html文件
     let out_file: PathBuf = PathBuf::from(BUILD_FOLDER).join(file_head.title + ".html");
     fs::write(out_file, html_string).expect("构建html失败😵");
