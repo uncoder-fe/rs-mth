@@ -18,6 +18,7 @@ fn main() {
     // println!("test{}", test);
     let test1: String = test.to_string(); // &str -> String
     let test2: &String = &test1; // String -> &String
+    // let test3: &str = test1.as_str(); // String -> &str
     let test3: &str = test2.as_str(); // &String -> &str
     println!(
         "test{}, test1{:}, test2{:?}, test3{}",
