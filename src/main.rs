@@ -12,7 +12,7 @@ fn get_own2(s: &str) {
 
 fn main() {
     // 正式编码之前
-    let test: &str = "字符串";
+    let test: &str = "字符串切片";
     // let test: String = "字符串".to_string();
     // get_own(test);
     // println!("test{}", test);

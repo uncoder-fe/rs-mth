@@ -38,6 +38,7 @@ struct ArticleMeta {
     categories: Vec<String>,
     slogan: String,
 }
+
 // 静态文件目录
 static STATIC_FOLDER: &str = "src/static";
 // 模版文件目录
@@ -52,9 +53,9 @@ fn get_extension_from_filename(filename: &str) -> Option<&str> {
     Path::new(filename).extension().and_then(OsStr::to_str)
 }
 // 包含后缀有这些的文件
-fn has_static(p: &str) -> bool {
-    let matches = [".js", ".css", ".html"];
-    let mut b = false;
+fn has_include_ext(p: &str) -> bool {
+    let matches: [&str; 3] = [".js", ".css", ".html"];
+    let mut b: bool = false;
     for elem in matches {
         if p.contains(elem) {
             b = true;
@@ -92,16 +93,24 @@ fn copy_static_file() -> Result<(), io::Error> {
             println!("跳过目录{:?}", _path);
             continue;
         }
-        let file_name: &OsStr = _path.file_name().unwrap();
-        let file_name_str: &str = file_name.to_str().unwrap();
+        // Option 是一个枚举类型，用于有 “不存在” 的可能性的情况
+        let file_name: Option<&OsStr> = _path.file_name();
+        // 使用match显式脱衣, 解包 `Some` 将取出被包装的值
+        let file_name_os_str: &OsStr = match file_name {
+            // Some找到一个属于 T 类型的元素
+            Some(t) => t,
+            None => OsStr::new(""), // None 找不到相应元素
+        };
+        let file_name_op_str: Option<&str> = file_name_os_str.to_str();
+        let file_name_str: &str = file_name_op_str.unwrap(); // 使用unwrap隐式脱衣，不推荐写法不安全
         let ext: Option<&str> = get_extension_from_filename(file_name_str);
         if ext == None {
             // 跳过没有文件后缀的，比如.DS_Store
             continue;
         }
         println!("拷贝文件{:?}", _path);
-        let build_folder = PathBuf::from(BUILD_FOLDER).join(file_name); // 思考题：为啥PathBuf可以join另一种类型OsStr？https://doc.rust-lang.org/stable/std/ffi/struct.OsStr.html, https://kaisery.github.io/trpl-zh-cn/ch10-00-generics.html
-                                                                        // 复制
+        let build_folder = PathBuf::from(BUILD_FOLDER).join(file_name_str); // 思考题：为啥PathBuf可以join另一种类型OsStr？https://doc.rust-lang.org/stable/std/ffi/struct.OsStr.html, https://kaisery.github.io/trpl-zh-cn/ch10-00-generics.html
+                                                                            // 复制
         fs::copy(_path, build_folder)?;
     }
     Ok(())
@@ -199,7 +208,7 @@ async fn hello_world(_req: Request<Body>) -> Result<Response<Body>, std::io::Err
     if uri_path == "/" {
         // 首页渲染
         let paths = fs::read_dir(BUILD_FOLDER).unwrap();
-        // 文件列表
+        // 文件列表，数组未知长度用Vec
         let mut files: Vec<Item> = Vec::new();
         for p in paths {
             let path_origin = p.unwrap().path();
@@ -237,7 +246,7 @@ async fn hello_world(_req: Request<Body>) -> Result<Response<Body>, std::io::Err
         let full_body = hyper::body::to_bytes(_req.into_body()).await.unwrap();
         *response.body_mut() = Body::from(full_body);
         Ok(response)
-    } else if has_static(uri_path) {
+    } else if has_include_ext(uri_path) {
         // 静态文件
         let static_ = Static::new(Path::new(BUILD_FOLDER));
         static_.serve(_req).await
