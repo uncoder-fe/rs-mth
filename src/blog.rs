@@ -39,6 +39,15 @@ struct ArticleMeta {
     slogan: String,
 }
 
+impl ArticleMeta { 
+    // 定义一个结构体的普通方法
+    fn log_title(&self) { 
+       //方法的具体逻辑代码
+       println!("结构体title:{:?}", self.title)
+    }
+ 
+ }
+
 // 静态文件目录
 static STATIC_FOLDER: &str = "src/static";
 // 模版文件目录
@@ -130,6 +139,7 @@ fn md_to_html(_path: PathBuf) {
     // println!("file_head_string:{:?}", file_head_string);
     // 解析头部toml信息
     let file_head: ArticleMeta = toml::from_str(file_head_string.trim()).unwrap();
+    file_head.log_title(); // 无意义的输出，样板
     // println!("file_head:{:?}", file_head);
     // 解析markdown内容
     let file_content: Parser = Parser::new(file_content_str);
@@ -207,7 +217,7 @@ async fn hello_world(_req: Request<Body>) -> Result<Response<Body>, std::io::Err
     let uri_path = _req.uri().path();
     if uri_path == "/" {
         // 首页渲染
-        let paths = fs::read_dir(BUILD_FOLDER).unwrap();
+        let paths: fs::ReadDir = fs::read_dir(BUILD_FOLDER).unwrap();
         // 文件列表，数组未知长度用Vec
         let mut files: Vec<Item> = Vec::new();
         for p in paths {
